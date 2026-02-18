@@ -1,6 +1,8 @@
 <script lang="ts" setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive } from 'vue'
 import { useTaskStore } from '../tasksStore/tasksStore'
+import useVuelidate from '@vuelidate/core'
+import { helpers, required, maxLength } from '@vuelidate/validators'
 
 const taskStore = useTaskStore()
 const initialData = {
@@ -8,7 +10,6 @@ const initialData = {
   date: '',
 }
 const formData = reactive({ ...initialData })
-const errorMessage = ref('')
 const props = defineProps({
   currentTaskId: {
     type: Number,
@@ -16,29 +17,36 @@ const props = defineProps({
   },
 })
 
+const rules = computed(() => ({
+  name: {
+    required: helpers.withMessage('* Please enter some text', required),
+    maxLength: helpers.withMessage('* Character limit is 25', maxLength(25)),
+  },
+  date: {}, // optional field
+}))
+
+const v$ = useVuelidate(rules, formData)
+
 function fillValues() {
   if (props.currentTaskId === 0) {
     return
-  } else {
-    let dataToEdit = taskStore.tasksArray.find((task) => task.id === props.currentTaskId)
-    formData.name = dataToEdit.name
-    formData.date = new Date(dataToEdit.date).toISOString().split('T')[0]
-    console.log(dataToEdit.date)
   }
+  const dataToEdit = taskStore.tasksArray.find((task) => task.id === props.currentTaskId)
+
+  formData.name = dataToEdit.name
+  formData.date = new Date(dataToEdit.date).toISOString().split('T')[0]
+  console.log(dataToEdit.date)
 }
 
 function addTask() {
-  if (formData.name === '') {
-    errorMessage.value = '* Please Enter Some Text'
-    return
-  } else if (formData.name.length > 25) {
-    errorMessage.value = '* Character length can not exceed 25'
-    return
-  }
+  v$.value.$touch()
+
+  if (v$.value.$invalid) return
+
   if (!formData.date) {
     formData.date = new Date().toISOString().split('T')[0]
   }
-  errorMessage.value = ''
+
   if (taskStore.addNewTask === true) {
     taskStore.addTask(formData)
     taskStore.addNewTask = false
@@ -47,6 +55,8 @@ function addTask() {
     taskStore.updateTask(taskStore.editCurrentTask, formData)
     taskStore.editCurrentTask = 0
   }
+
+  v$.value.$reset()
 }
 
 function closeModal() {
@@ -73,10 +83,15 @@ fillValues()
           <input
             type="text"
             placeholder="Enter New Task"
+            @blur="v$.name.$touch()"
             v-model="formData.name"
             class="text-2xl bg-orange-300 text-white p-4 w-full border-none outline-none focus:outline-none rounded-full"
           />
-          <p class="text-red-600 text-lg">{{ errorMessage }}</p>
+          <p v-if="v$.name.$error" class="text-red-600 text-lg">
+            <span v-for="err in v$.name.$errors" :key="err.$uid">
+              {{ err.$message }}
+            </span>
+          </p>
           <br />
         </span>
         <button

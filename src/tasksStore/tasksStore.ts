@@ -7,16 +7,6 @@ export const useTaskStore = defineStore('task', {
     editCurrentTask: 0,
     tasksArray: JSON.parse(localStorage.getItem("tasks") || "[]")
   }),
-  getters: {
-    // postDetailArray: (state) => {
-    //   return state.users.map((user) => {
-    //     return {
-    //       ...user,
-    //       photos: state.photos.find((photo, index) => index + 1 === user.id),
-    //     }
-    //   })
-    // }
-  },
   actions: {
     addTask(task: Object) {
       const newTask = {
@@ -34,7 +24,6 @@ export const useTaskStore = defineStore('task', {
       if (!consentToDelete) return
       else {
         this.tasksArray = this.tasksArray.filter(t => t.id !== index);
-        //idea to create a whole new array that does not include element with one specific id
 
         this.saveTasks()
       }

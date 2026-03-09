@@ -22,7 +22,6 @@ const rules = computed(() => ({
     required: helpers.withMessage('* Please enter some text', required),
     maxLength: helpers.withMessage('* Character limit is 25', maxLength(25)),
   },
-  date: {}, // optional field
 }))
 
 const v$ = useVuelidate(rules, formData)
@@ -35,7 +34,6 @@ function fillValues() {
 
   formData.name = dataToEdit.name
   formData.date = new Date(dataToEdit.date).toISOString().split('T')[0]
-  console.log(dataToEdit.date)
 }
 
 function addTask() {
